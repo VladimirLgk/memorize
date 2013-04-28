@@ -16,6 +16,7 @@ class Label:
 		self.text = text_
 		self.pos = pos_
 		self.size = size_
+		self.exText = ''
 		if(container != None):
 			container.append(self)
 		
@@ -39,7 +40,7 @@ class Label:
 	def draw(self, img_):
 		if (self.visible != 0):
 			text_pos = (self.pos[0]+5,self.pos[1]+18)
-			img_.text(text_pos, self.text)#, font=(self.fntType,self.fntSize)
+			img_.text(text_pos, self.text+self.exText)#, font=(self.fntType,self.fntSize)
 		
 class Button(Label):
 	active = 0
@@ -115,26 +116,26 @@ class RemindUi(BaseUi):
 		
 		BaseUi.__init__(self)
 			
-		self.knownFact = Label(u'good',(5,10),(280,90),self.widgets)
+		self.knownFact = Label(u'good',(5,15),(280,90),self.widgets)
 		self.unknownFact = Label(u'bad',(5,105),(280,90),self.widgets)
 		
 		self.showAnswer = Button(u'show answer', (110,205),(90,25),self.widgets)	
 		self.showAnswer.apperance(0x0,(0,208,128),1)
 		
-		self.easyButton = Button(u'easy', (20,205),(50,25),self.widgets)	
+		self.easyButton = Button(u'easy', (5,205),(70,25),self.widgets)	
 		self.easyButton.apperance(0x0,(0,208,128),1)	
 	
-		self.normalButton = Button(u'normal', (75,205),(50,25),self.widgets)	
+		self.normalButton = Button(u'normal', (80,205),(80,25),self.widgets)	
 		self.normalButton.apperance(0x0,(0,208,128),1)
 	
-		self.hardButton = Button(u'hard', (130,205),(50,25),self.widgets)	
+		self.hardButton = Button(u'hard', (165,205),(70,25),self.widgets)	
 		self.hardButton.apperance(0x0,(0,208,128),1)
 		
-		self.failButton = Button(u'unknown', (185,205),(70,25),self.widgets)	
+		self.failButton = Button(u'unknown', (240,205),(70,25),self.widgets)	
 		self.failButton.apperance(0x0,(0,208,128),1)
 		
 		
-		self.learnCount = Label(u'0', (270,205),(30,25),self.widgets)	
+		self.infoBox = Label(u'0', (240,1),(60,25),self.widgets)	
 		
 		self.startLearnBtn = Button(u'start learn', (110,90),(90,25),self.widgets)	
 		self.startLearnBtn.apperance(0x0,(0,208,128),1)
@@ -143,8 +144,12 @@ class RemindUi(BaseUi):
 		self.importFileBtn.apperance(0x0,(0,208,128),1)
 		self.startStage()
 		
+	def setInfo(self, stInfo):
+		self.infoBox.text = unicode("r %d, n %d" % (stInfo[0], stInfo[1]))	
+		
 	def startStage(self):
 		self.importFileBtn.visible = 1	
+		self.infoBox.visible = 1
 		self.startLearnBtn.visible = 1
 		self.startLearnBtn.active = 1
 		self.currentStage = self.START_STAGE
@@ -152,12 +157,18 @@ class RemindUi(BaseUi):
 	def showFactStage(self):
 		if(self.nextFactCb):
 			fact = self.nextFactCb()
+			predict = fact[2]
 			self.knownFact.text = fact[0]
 			self.unknownFact.text = fact[1]
-			self.learnCount.text =  unicode("%d" % (fact[2]))
+			if(len(predict) > 0):	
+				self.infoBox.text =  unicode("%d %.1f %d" % (fact[3], predict['easyFactor'], predict['rep']))
+				self.easyButton.exText = unicode(" %d" % (predict['easy']))
+				self.normalButton.exText = unicode(" %d" % (predict['normal']))
+				self.hardButton.exText = unicode(" %d" % (predict['hard']))
+			
 		self.knownFact.visible = 1
 		self.showAnswer.visible = 1
-		self.learnCount.visible = 1
+		self.infoBox.visible = 1
 		self.showAnswer.active = 1
 		self.currentStage = self.SHOW_FACT_STAGE
 		
@@ -186,7 +197,8 @@ class RemindUi(BaseUi):
 	def clearStartStage(self):
 		self.importFileBtn.visible = 0	
 		self.startLearnBtn.visible = 0
-			
+		self.infoBox.visible = 0
+		
 	def pressSelectedButton(self):
 		if(self.currentStage == self.START_STAGE):
 			self.clearStartStage()
@@ -208,13 +220,13 @@ class RemindUi(BaseUi):
 	def getAnswerResult(self):
 		if(self.easyButton.active):
 			self.easyButton.active = 0
-			return 3;
+			return 5;
 		elif(self.normalButton.active):
 			self.normalButton.active = 0
-			return 2;	
+			return 4;	
 		elif(self.hardButton.active):
 			self.hardButton.active = 0
-			return 1;
+			return 3;
 		elif(self.failButton.active):
 			self.failButton.active = 0
 			return 0;
