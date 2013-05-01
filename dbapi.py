@@ -91,7 +91,7 @@ class memdb:
 			fc.easyFactor = self.dbv.col(6)
 			fc.interval = self.dbv.col(7)
 			fc.repetition = self.dbv.col(8)
-			fc.startDate = self.dbv.col(9)
+			fc.startDate = getDate(self.dbv.col(9))
 			fc.learned = 1
 			listFacts.append(fc)
 			self.dbv.next_line()

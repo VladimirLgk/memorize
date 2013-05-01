@@ -93,6 +93,8 @@ def getNextFact(previousFact):
 	if len(lof) == 1:
 		nextFact = 0
 	elif len(lof) == 2:
+		if previousFact > 1:
+			previousFact = 1
 		nextFact = 1 - previousFact
 	else:	
 		newValue = 0
