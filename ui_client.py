@@ -174,6 +174,31 @@ def startLearn():
 	lof.extend(newFacts)
 	print 'There are ', len(lof), ' facts for study'
 	return info
+	
+def onSelect():
+	study()	
+	
+def startMenu():
+	lb = appuifw.Listbox([ u'learn', u'change db',u'import file', u'export',], onSelect)
+	appuifw.app.body = lb	
+	
+def study():	
+	appuifw.app.body = cnv	
+	#SystemRedraw(((0,0),(0,0)))	
+	
+def editKnowledge():
+	frm = appuifw.Form([(u'quest','text',unicode(lof[currentFact].qwest)),(u'answer','text',unicode(lof[currentFact].answer))]);
+	frm.execute()	
+	
+def changeTab(tab_idx):	
+	if(tab_idx == 0):
+		startMenu()
+			
+	if(tab_idx == 1):	
+		study()
+		
+	if(tab_idx == 2):	
+		editKnowledge()	
 
 if __name__ == "__main__":
 	
@@ -183,17 +208,19 @@ if __name__ == "__main__":
 	random.seed()
 	
 	db = memdb()
-	
 	stInfo = startLearn()
-	
+
 	AppUi = RemindUi(importFile, nextFact, factRepetitionResult)
 	AppUi.setInfo(stInfo)
 	
 	cnv = appuifw.Canvas(event_callback=handle_event, redraw_callback=handle_redraw)
 	img = Image.new(cnv.size)
-	
-	appuifw.app.body = cnv
 
+	#tbs = [u'start',u'study',u'cfg']
+	#appuifw.app.set_tabs(tbs, changeTab)
+	#appuifw.app.activate_tab(0)
+	startMenu()
+	
 	app_lock = e32.Ao_lock()  
 	app_lock.wait()
 

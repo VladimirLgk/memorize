@@ -7,7 +7,7 @@ import zlib
 import time
 import sys
 
-class fact:      
+class Knowledge:      
 	def __init__(self, qwest_, answer_):
 		self.id_ = 0
 		self.qwest = qwest_
@@ -24,24 +24,23 @@ def getDate(timeValue):
 		dateTime = e32db.format_time(timeValue).split()			   
 		return dateTime[0]
 		
-class memdb:
-	def __init__(self):
-		self.dbPath = u'e:\\memorise\\facts.db'
+class CardStorage:
+	def __init__(self, path):
+		#self.dbPath = u'e:\\memorise\\facts.db'
+		self.dbPath = path
 		self.db = e32db.Dbms()
 		self.dbv = e32db.Db_view()
 		try:
-			 self.db.open(self.dbPath)
-			 print "the memorise data base open"
+			self.db.open(self.dbPath)
+			print "the memorise data base open"
 		except:
 			print "the memorise data base not found create new"
 			self.db.create(self.dbPath)
 			self.db.open(self.dbPath)
 			print "open created db and create new table"
-			self.createTables()
+			self.initNewStorage()
 				   
-	
-				   
-	def createTables(self):
+	def initNewStorage(self):
 		#create new table for knowledged
 		try:
 			self.db.execute(u'create table facts (id counter, reqData varchar(128),reqSound bigint,respData varchar(128),\
@@ -54,7 +53,7 @@ class memdb:
 		#self.insertKnowns('unknown','unknown', 0)
 		print "finished create table"
 
-	def insertKnowns(self, request, responce, sound_name):
+	def insertOneKnowledge(self, request, responce, sound_name):
 		bdate = getDate(0)
 														
 		sql_req = "insert into facts (reqData, reqSound, respData, respSound, easyFactor, interval, repetition, startDate, showDate, newCard)\
@@ -67,9 +66,10 @@ class memdb:
 			print sys.exc_info()[0]
 			print sys.exc_info()[1]
 			print sys.exc_info()[2] 
-                                                                                                                                                                                                                   
+     
+    def (self, ):																																																				
    
-	def getPracticeFacts(self):   
+	def getPracticeKnowledges(self):   
 		dateCurrent = getDate(time.time())
 		showFactsReq = "select * from facts where (showDate <= #%s#) and (newCard = 0)"%(dateCurrent)
 		print 'result query: ', unicode(showFactsReq)
@@ -97,7 +97,7 @@ class memdb:
 			self.dbv.next_line()
 		return listFacts	
 									
-	def getNewFacts(self, maxNewCard):   
+	def getNewKnowledges(self, maxNewKnowledges):   
 		newFactsReq = "select * from facts where newCard = 1"
 		
 		try:
@@ -124,7 +124,7 @@ class memdb:
 			self.dbv.next_line()
 		return listFacts
 		
-	def storeFact(self, fact):
+	def updateOneKnowledge(self, fact):
 		if(fact.learned == 0 and fact.newCard == 0 ):
 			fact.startDate = getDate(time.time())	
 		nextDate = time.time()
