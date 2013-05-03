@@ -1,3 +1,18 @@
+import e32
+import appuifw
+import sysinfo
+import codecs
+import random
+import time
+import sys
+sys.path.append("e:\data\python");
+
+from KnowledgeStorage import KnowledgeStorage
+from Knowledge import Knowledge
+
+import_path = u'e:\\memorise\\import\\'
+media_path = u'e:\\memorise\\media\\'
+
 class KnowledgeProcessor:
 	
 	def __init__(self, Storage_):

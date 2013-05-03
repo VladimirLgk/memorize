@@ -1,4 +1,4 @@
 memorize
 ========
 
-Memorizing facts.
+Memorizing knowledges.

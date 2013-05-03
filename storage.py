@@ -7,6 +7,8 @@ import zlib
 import time
 import sys
 
+import Knowledge
+
 def SimpleLogger(str):
 	print str
 		
@@ -15,6 +17,19 @@ def getDate(timeValue):
 		return dateTime[0]
 		
 class KnowledgeStorage:
+	
+	ID = 1
+	REQ_DATA = 2
+	REQ_SND = 3
+	RESP_DATA = 4
+	RESP_SND = 5	
+	EESY_FACTOR = 6
+	INTERVAL = 7
+	REPETITION = 8
+	START_DATE = 9
+	NEXT_DATE = 10
+	NEW_CARD = 11
+		
 	def __init__(self, path, Logger=None):
 		if Logger == None:
 			self.Log = SimpleLogger
@@ -70,44 +85,41 @@ class KnowledgeStorage:
 		listFacts = []	
 		dateCurrent = getDate(time.time())
 		showFactsReq = "select * from facts where (showDate <= #%s#) and (newCard = 0)"%(dateCurrent)
-		print 'result query: ', unicode(showFactsReq)
-
-			#TODO: prepare lambda consumer
-			fc = fact(self.dbv.col(2), self.dbv.col(4))
-			fc.id_ = self.dbv.col(1)
-			fc.easyFactor = self.dbv.col(6)
-			fc.interval = self.dbv.col(7)
-			fc.repetition = self.dbv.col(8)
-			fc.startDate = getDate(self.dbv.col(9))
-			fc.learned = 1
-			listFacts.append(fc)
 		
-		
-		visitEachKnowledge(unicode(showFactsReq), ... ,"Error get practice fact: ")
+		def practiceGetting(col, container=listFacts):
+			kn = Knowledge(col(REQ_DATA), col(RESP_DATA))
+			kn.id_ = col(ID)
+			kn.easyFactor = col(EESY_FACTOR)
+			kn.interval = col(INTERVAL)
+			kn.repetition = col(REPETITION)
+			kn.startDate = getDate(col(START_DATE))
+			kn.learned = 1
+			container.append(kn)
+			
+		visitEachKnowledge(unicode(showFactsReq), practiceGetting ,"Error get practice fact: ")
 		return listFacts
 									
 	def getNewKnowledges(self, maxNewKnowledges):   
 		listFacts = []	
 		newFactsReq = "select * from facts where newCard = 1"
 		
-			#TODO: prepare lambda consumer
-			fc = fact(self.dbv.col(2), self.dbv.col(4))
-			fc.id_ = self.dbv.col(1)
-			fc.newCard = 1
-			fc.easyFactor = 2.5
-			fc.startDate = getDate(self.dbv.col(9))
-			listFacts.append(fc)
+		def newGetting(col, container=listFacts):
+			kn = Knowledge(col(REQ_DATA), col(RESP_DATA))
+			kn.id_ = col(ID)
+			kn.newCard = 1
+			kn.easyFactor = 2.5
+			kn.startDate = getDate(col(START_DATE))
+			listFacts.append(kn)
 			
-		visitEachKnowledge(unicode(showFactsReq), ... ,"Error get new fact: ")
+		visitEachKnowledge(unicode(showFactsReq), newGetting,"Error get new fact: ")
 		return listFacts
 		
-	def updateOneKnowledge(self, fact):
-		if(fact.learned == 0 and fact.newCard == 0 ):
-			fact.startDate = getDate(time.time())	
+	def updateOneKnowledge(self, kn):
+		if(kn.learned == 0 and kn.newCard == 0 ):
+			kn.startDate = getDate(time.time())	
 		nextDate = time.time()
-		nextDate += fact.interval*60*60*24
+		nextDate += kn.interval*60*60*24
 		
 		req = "update facts set easyFactor=%f, interval=%d, repetition=%d, showDate=#%s#, startDate=#%s#, newCard=%d\
-		where id=%d"%(fact.easyFactor, fact.interval, fact.repetition, getDate(nextDate), fact.startDate, fact.newCard, fact.id_)
+		where id=%d"%(kn.easyFactor, kn.interval, kn.repetition, getDate(nextDate), kn.startDate, kn.newCard, kn.id_)
 		execQuery(unicode(req),"Error store knowlege: "+sql_req)
-		
