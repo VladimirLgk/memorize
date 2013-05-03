@@ -5,10 +5,10 @@ import codecs
 import random
 import time
 import sys
-sys.path.append("e:\data\python");
 
-from KnowledgeStorage import KnowledgeStorage
-from Knowledge import Knowledge
+sys.path.append("e:\data\python");
+from storage import KnowledgeStorage
+from knowledge import Knowledge
 
 import_path = u'e:\\memorise\\import\\'
 media_path = u'e:\\memorise\\media\\'
@@ -19,23 +19,24 @@ class KnowledgeProcessor:
 		self.Storage = Storage_
 		self.Knowleges = []
 		self.currentKnowledge = -1
-			
+		self.maxKnowledge = 60
+		
 	def startLearn(self):		
 		info = []
 		self.Knowleges = self.Storage.getPracticeKnowledges()
-		info.append(len(self.Storage))
+		info.append(len(self.Knowleges))
 		print 'There are ', info[0], ' knowledges for repeat'
 		
 		numNewKnowledges = 0
-		if info[0] < maxKnowledge:
-			numNewKnowledges = maxKnowledge - info[0]
+		if info[0] < self.maxKnowledge:
+			numNewKnowledges = self.maxKnowledge - info[0]
 			
 		newKnowledges = self.Storage.getNewKnowledges(numNewKnowledges)	
 		info.append(len(newKnowledges))
 		print 'There are ', info[1], ' new knowledges'		
 		
-		Knowleges.extend(newKnowledges)
-		print 'There are ', len(lof), ' knowledges for study'
+		self.Knowleges.extend(newKnowledges)
+		print 'There are ', info[0] + info[1],' knowledges for study'
 		return info
 	
 	def getNextKnowledge(self, previousKnowledge):
@@ -58,23 +59,23 @@ class KnowledgeProcessor:
 	
 	def nextKnowledge(self):
 		if len(self.Knowleges) > 0:
-			self.currentKnowledge = self.getNexKnowledge(self.currentKnowledge)
-		know = self.currentKnowledge()
-		return know
+			self.currentKnowledge = self.getNextKnowledge(self.currentKnowledge)
+		return self.getCurrentKnowledge()
 		
-	def currentKnowledge(self):
-		know = []
+	def getCurrentKnowledge(self):
+		kn = []
 		if len(self.Knowleges) > 0:		
-			know.append(unicode(self.Knowleges[self.currentKnowledge].qwest))
-			know.append(unicode(self.Knowleges[self.currentKnowledge].answer))
-			know.append(self.Knowleges[self.currentKnowledge].suggestion())
+			kn.append(unicode(self.Knowleges[self.currentKnowledge].qwest))
+			kn.append(unicode(self.Knowleges[self.currentKnowledge].answer))
+			kn.append(self.Knowleges[self.currentKnowledge].suggestion())
 		else:
-			know.append(u'No knowledegs')
-			know.append(u'No knowledegs')
-			know.append({})
+			kn.append(u'No knowledegs')
+			kn.append(u'No knowledegs')
+			kn.append({})
 			currentKnowledge = -1
-		know.append(len(self.Knowleges))	
-		return know	
+			
+		kn.append(len(self.Knowleges))	
+		return kn	
 	
 	def resultKnowledgeRepetition(self, result):	
 		if (self.currentKnowledge == -1):

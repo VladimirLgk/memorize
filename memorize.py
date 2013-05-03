@@ -1,28 +1,36 @@
 import e32
 import appuifw
-import sysinfo
-import codecs
-from graphics import *
-from key_codes import *
-			
+import sys
+
+sys.path.append("e:\data\python");
+
+from ui import MemorizeUi
+from processor import KnowledgeProcessor
+from storage import KnowledgeStorage
+from serialize import Serialize
+
+storage_path = u'e:\\memorise\\'
+import_path = u'e:\\memorise\\import\\'
+media_path = u'e:\\memorise\\media\\'
+
 def tabs_proc(id):
 	print id
 
 def quit():
 	app_lock.signal()	
-	
-	
 
+
+	
 if __name__ == "__main__":
 	
-	appuifw.app.title = u"Memorize"  
-	appuifw.app.screen = 'full'   
-	appuifw.app.exit_key_handler = quit 
+	storage = KnowledgeStorage(u'e:\\memorise\\facts.db')
+	ser = Serialize(storage)
+	proc = KnowledgeProcessor(storage)
 	
-	tbs = [u'start',u'study',u'cfg']
-	appuifw.app.set_tabs(tbs, changeTab)
-	appuifw.app.activate_tab(0)
-	app0()
+	ui = MemorizeUi(u"Memorize", quit)
+	ui.setFileCallback(ser.importFile, ser.exportFile);
+	ui.setStudyCallback(proc.nextKnowledge, proc.resultKnowledgeRepetition, proc.startLearn);
+	
 	app_lock = e32.Ao_lock()  
 	app_lock.wait()
 
