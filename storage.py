@@ -23,23 +23,31 @@ START_DATE = 9
 NEXT_DATE = 10
 NEW_CARD = 11
 
+ERR_DUPLICATE_RECORDS = -2
+ERR_GETTING_DATA = -3
+
+def getDate(timeValue):
+	dateTime = e32db.format_time(timeValue).split()			   
+	return dateTime[0]
+
 def SimpleLogger(str):
 	print str
-		
-def getDate(timeValue):
-		dateTime = e32db.format_time(timeValue).split()			   
-		return dateTime[0]
-		
+				
 class KnowledgeStorage:
 		
-	def __init__(self, path, Logger=SimpleLogger):
+	def __init__(self,filedb, path_, Logger=SimpleLogger):
 		self.Log = Logger
 		self.db = e32db.Dbms()
 		self.dbv = e32db.Db_view()
-		self.open(path)
+		self.path = path_
+		self.open(filedb)
 		
-	def open(self, path):
-		self.dbPath = path
+	def	dbName(self):
+		return self.fileDb
+		
+	def open(self, filedb):
+		self.fileDb = filedb
+		self.dbPath = self.path+filedb
 		self.db.close()
 		try:
 			self.db.open(self.dbPath)
@@ -64,23 +72,63 @@ class KnowledgeStorage:
 			respSound bigint, easyFactor float, interval integer,repetition integer, startDate date, showDate date, newCard integer)'
 		self.execQuery(req,"Error create table:")
 		
-	def	setKnowledge(self, kn, stat):
-		#TODO: implement correct import
-		self.insertFullNewKnowledge(kn):
-	
-	def insertFillNewKnowledge(self, kn):
-												
-		req = "insert into facts (reqData, reqSound, respData, respSound, easyFactor, interval, repetition, startDate, showDate, newCard)\
-							values ('%s',%d,'%s',%d, %f, %d, %d, #%s#, #%s#, %d)" %\ 
-							(kn.qwest, 0, kn.answer, 0, kn.easyFactor, kn.interval, kn.repetition, kn.startDate, kn.showDate, kn.newCard)							
-		execQuery(unicode(req),"Error insert fact:")		
-			
-	def insertNewKnowledge(self, request, responce):
-		bdate = getDate(0)													
-		req = "insert into facts (reqData, reqSound, respData, respSound, easyFactor, interval, repetition, startDate, showDate, newCard)\
-							values ('%s',%d,'%s',%d, %f, %d, %d, #%s#, #%s#, %d)" % (request, 0, responce, 0, 2.5, 0, 0, bdate, bdate, 1)							
-		execQuery(unicode(req),"Error insert fact:")							
+	def	setKnowledge(self, kn, kstat):
+		result = self.isKnowledgeExist(kn)
+		if(result == 1):
+			kstat[0] += 1
+			self.updateExistKnowledge(kn)
+		elif(result == 0):	
+			self.insertNewKnowledge(kn)
+			kstat[1] += 1
+		else:
+			print u'error in find knowledge ',result		
 
+	def isKnowledgeExist(self, kn):
+		knReq = u'select * from facts where id = %d'%(kn.id_)
+		if(kn.id_ == -1):
+			knReq = u'select * from facts where reqData = \'%s\''%(kn.qwest)
+		try:
+			#print "Select ek:",knReq	
+			self.dbv.prepare(self.db,knReq)
+			if(self.dbv.count_line() == 0):	
+				return 0
+			if(self.dbv.count_line() > 1):	
+				return ERR_DUPLICATE_RECORDS
+			self.dbv.get_line()	
+			kn.id_ = self.dbv.col(ID)
+			return 1
+		except SymbianError:
+			self.Log("Error get knowlege: ")
+			self.Log(sys.exc_info()[0])
+			self.Log(sys.exc_info()[1])
+			self.Log(sys.exc_info()[2])
+		return ERR_GETTING_DATA
+		
+	def insertNewKnowledge(self, kn):							
+		req = "insert into facts (reqData, reqSound, respData, respSound, easyFactor,\
+interval, repetition, startDate, showDate, newCard) \
+values ('%s',%d,'%s',%d, %f, %d, %d, #%s#, #%s#, %d)" %\
+		(kn.qwest, 0, kn.answer, 0, kn.easyFactor, kn.interval, kn.repetition, kn.startDate, kn.showDate, kn.newCard)	
+		#print "Insert nk:",req						
+		self.execQuery(unicode(req),"Error insert fact: "+req)		
+	
+	def updateExistKnowledge(self, kn):
+		req = "update facts set reqData='%s', respData='%s' where id=%d"%(kn.qwest, kn.answer, kn.id_)
+		#print "Update ek:",unicode(req)	
+		self.execQuery(unicode(req),"Error update knowlege: "+req)	
+			
+	def updateRepetitionKnowledge(self, kn):
+		if(kn.learned == 0 and kn.newCard == 0 ):
+			kn.startDate = getDate(time.time())	
+		nextDate = time.time()
+		nextDate += kn.interval*60*60*24
+		
+		req = "update facts set easyFactor=%f, interval=%d, repetition=%d, showDate=#%s#, startDate=#%s#, newCard=%d\
+		where id=%d"%(kn.easyFactor, kn.interval, kn.repetition, getDate(nextDate), kn.startDate, kn.newCard, kn.id_)
+		#print "Update rk:",req
+		self.execQuery(unicode(req),"Error update knowlege: "+req)
+	
+			
 	def visitEachKnowledge(self, request, consumer, errorMessage):
 		try:
 			self.dbv.prepare(self.db,request)
@@ -98,7 +146,7 @@ class KnowledgeStorage:
 		listFacts = []	
 		dateCurrent = getDate(time.time())
 		showFactsReq = "select * from facts where (showDate <= #%s#) and (newCard = 0)"%(dateCurrent)
-		
+		#print u'get practice %s \n'%(showFactsReq)
 		def practiceGetting(col, container=listFacts):
 			kn = Knowledge(col(REQ_DATA), col(RESP_DATA))
 			kn.id_ = col(ID)
@@ -107,6 +155,7 @@ class KnowledgeStorage:
 			kn.repetition = col(REPETITION)
 			kn.startDate = getDate(col(START_DATE))
 			kn.learned = 1
+			kn.newCard = col(NEW_CARD)
 			container.append(kn)
 			
 		self.visitEachKnowledge(unicode(showFactsReq), practiceGetting ,"Error get practice fact: ")
@@ -117,11 +166,9 @@ class KnowledgeStorage:
 		newFactsReq = "select * from facts where newCard = 1"
 		
 		def newGetting(col, container=listFacts, maxKnw=maxNewKnowledges):
-			if(len(listFacts) < maxKnw):
+			if(len(container) < maxKnw):
 				kn = Knowledge(col(REQ_DATA), col(RESP_DATA))
 				kn.id_ = col(ID)
-				kn.newCard = 1
-				kn.easyFactor = 2.5
 				kn.startDate = getDate(col(START_DATE))
 				container.append(kn)
 			
@@ -146,12 +193,3 @@ class KnowledgeStorage:
 		self.visitEachKnowledge(unicode(allFactsReq), allGetting,"Error get new fact: ")
 		return listKnowledges	
 		
-	def updateOneKnowledge(self, kn):
-		if(kn.learned == 0 and kn.newCard == 0 ):
-			kn.startDate = getDate(time.time())	
-		nextDate = time.time()
-		nextDate += kn.interval*60*60*24
-		
-		req = "update facts set easyFactor=%f, interval=%d, repetition=%d, showDate=#%s#, startDate=#%s#, newCard=%d\
-		where id=%d"%(kn.easyFactor, kn.interval, kn.repetition, getDate(nextDate), kn.startDate, kn.newCard, kn.id_)
-		execQuery(unicode(req),"Error store knowlege: "+sql_req)

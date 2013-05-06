@@ -16,12 +16,13 @@ class Serialize:
 		f = codecs.open(filename, "r", "UTF-8")
 		listOfWords = f.readlines()
 		counter = 0
-		statImportKnowledge = []
+		
+		statImportKnowledge = [0,0]
 		for x in listOfWords:
 			x = x.strip()
 			known = Knowledge()
 			known.restore(x)
-			self.storage.setKnowledge(kn, statImportKnowledge)
+			self.storage.setKnowledge(known, statImportKnowledge)
 		return statImportKnowledge;	
 	
 	def exportFile(self, name):

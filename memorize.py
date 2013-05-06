@@ -18,18 +18,20 @@ def tabs_proc(id):
 
 def quit():
 	app_lock.signal()	
-
-
 	
 if __name__ == "__main__":
 	
-	storage = KnowledgeStorage(u'e:\\memorise\\facts.db')
+	storage = KnowledgeStorage(u'facts.db',storage_path)
 	ser = Serialize(storage)
 	proc = KnowledgeProcessor(storage)
 	
+	
 	ui = MemorizeUi(u"Memorize", quit)
-	ui.setFileCallback(ser.importFile, ser.exportFile);
-	ui.setStudyCallback(proc.nextKnowledge, proc.resultKnowledgeRepetition, proc.startLearn);
+	ui.setFileCallback(ser.importFile, ser.exportFile)
+	ui.setStudyCallback(proc.nextKnowledge, proc.resultKnowledgeRepetition, proc.startLearn)
+	ui.setDatabaseCallback(storage.open, storage.dbName)
+	ui.setEditCallback(proc.getCurrentKnowledge, proc.setCurrentKnowledge)
+	ui.main.show()
 	
 	app_lock = e32.Ao_lock()  
 	app_lock.wait()
